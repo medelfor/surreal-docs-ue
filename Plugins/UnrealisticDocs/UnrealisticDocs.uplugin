@@ -1,0 +1,21 @@
+{
+	"FileVersion" : 3,
+	"FriendlyName" : "Unrealistic Docs™",
+	"Description" : "Plugin accompanying Unrealistic Docs™ CLI",
+	"Version" : 1,
+	"VersionName" : "1.0",
+	"CreatedBy" : "Medelför OÜ",
+	"CreatedByURL" : "https://medelfor.com",
+	"MarketplaceURL" : "",
+	"SupportURL" : "support@medelfor.com",
+	"Category" : "Documentation",
+	"CanContainContent" : false,
+	"EnabledByDefault" : false,
+	"Modules" :
+	[
+		{
+			"Name": "UnrealisticDocs",
+			"Type": "Runtime"
+		}
+	]
+}

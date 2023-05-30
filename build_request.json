@@ -1,0 +1,107 @@
+{
+  "project" : {
+    "repo" : "medelfor/unrealistic-docs-ue",
+    "branch" : "",
+    "build_entrypoint" : "scripts/cicd/builder/build.ps1",
+    "artifacts" : [
+      {
+        "stage_name": "unrealistic-docs-ue",
+        "path": "dist_src",
+        "name" : "unrealistic-docs-ue",
+        "upload_to_gs" : true,
+        "upload_to_artifactory" : false,
+        "gs_save_separate_version" : false,
+        "template" : "ue4.27.2"
+      }
+    ],
+    "additional_ssh_keys" : [],
+    "templates" : [
+      {
+        "name" : "ue4.27.2",
+        "url" : "medelfor/ue-project-templates",
+        "subdir" : "4.27/a",
+        "template_caching" : [
+          "Binaries",
+          "Intermediate",
+          "Plugins\\UnrealisticDocsTests\\Binaries",
+          "Plugins\\UnrealisticDocsTests\\Intermediate",
+          "Plugins\\UnrealisticDocs\\Binaries",
+          "Plugins\\UnrealisticDocs\\Intermediate"
+        ]
+      },
+      {
+        "name" : "ue5.0",
+        "url" : "medelfor/ue-project-templates",
+        "subdir" : "5.0/a",
+        "template_caching" : [
+          "Binaries",
+          "Intermediate",
+          "Plugins\\UnrealisticDocsTests\\Binaries",
+          "Plugins\\UnrealisticDocsTests\\Intermediate",
+          "Plugins\\UnrealisticDocs\\Binaries",
+          "Plugins\\UnrealisticDocs\\Intermediate"
+        ]
+      },
+      {
+        "name" : "ue5.1",
+        "url" : "medelfor/ue-project-templates",
+        "subdir" : "5.1/a",
+        "template_caching" : [
+          "Binaries",
+          "Intermediate",
+          "Plugins\\UnrealisticDocsTests\\Binaries",
+          "Plugins\\UnrealisticDocsTests\\Intermediate",
+          "Plugins\\UnrealisticDocs\\Binaries",
+          "Plugins\\UnrealisticDocs\\Intermediate"
+        ]
+      }
+    ],
+    "name" : "unrealistic-docs-ue",
+    "test_executable" : "scripts/tests/run_tests.ps1",
+    "version_file" : "Plugins/UnrealisticDocs/Source/UnrealisticDocs/Private/version.h",
+    "version_template" : "version_template_ue.h",
+    "version_module" : "",
+    "conan_profile_release" : "",
+    "conan_profile_debug" : "",
+    "to_lint" : [
+      "Plugins/UnrealisticDocsTests/Source/UnrealisticDocsTestsTestModule/Private",
+      "Plugins/UnrealisticDocsTests/Source/UnrealisticDocsTestsTestModule/Public",
+      "Plugins/UnrealisticDocsTests/Source/UnrealisticDocsTests/Private",
+      "Plugins/UnrealisticDocsTests/Source/UnrealisticDocsTests/Public",
+      "Plugins/UnrealisticDocs/Source/UnrealisticDocs/Private",
+      "Plugins/UnrealisticDocs/Source/UnrealisticDocs/Public"
+    ],
+    "lint_profile" : "unreal",
+    "filter": {
+      "do_mirror": false,
+      "mirror": ""
+    }
+  },
+  "integration" : {
+    "gcloud_key" : "",
+    "gcloud_account_email" : "",
+    "gcp_project_id" : "",
+    "artifactory_username" : "",
+    "artifactory_password" : "",
+    "artifactory_url" : "",
+    "buildbot" : {
+      "ssh_key" : "",
+      "pat": "",
+      "username" : "",
+      "email" : ""
+    },
+    "artifacts_bucket" : ""
+  },
+  "build_machine" : {
+    "workspace_dir" : ""
+  },
+  "build" : {
+    "build_id" : "",
+    "commit_sha" : ""
+  },
+  "options" : {
+    "do_rebuild" : false,
+    "version" : "",
+    "environment" : ""
+  }
+}
