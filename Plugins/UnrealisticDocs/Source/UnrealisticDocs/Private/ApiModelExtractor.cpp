@@ -21,31 +21,40 @@
 #include "ApiModel/Types/SetType.h"
 #include "ApiModel/Types/StructType.h"
 
+// nullptr safe
 template<typename T>
 FIdentifierName ExtractName(T* Object)
 {
     FIdentifierName Name;
 
-    Name.SetName(Object->GetName());
-    Name.SetDisplayName(Object->GetDisplayNameText().ToString());
+    if (Object)
+    {
+        Name.SetName(Object->GetName());
+        Name.SetDisplayName(Object->GetDisplayNameText().ToString());
+    }
 
     return Name;
 }
 
+// nullptr safe
 template<typename T>
 bool IsNative(const T* Object)
 {
-    return Object->GetPathName().StartsWith("/Script/");
+    return Object ? Object->GetPathName().StartsWith("/Script/") : true;
 }
 
+// nullptr safe
 template<typename T>
 FBasicIdentifierInfo ExtractBasicIdentifierInfo(T* Object)
 {
     FBasicIdentifierInfo BasicIdentifierInfo;
 
-    BasicIdentifierInfo.SetName(ExtractName(Object));
-    BasicIdentifierInfo.SetIsNativeDefined(IsNative(Object));
-    BasicIdentifierInfo.SetFullPath(Object->GetPathName());
+    if (Object)
+    {
+        BasicIdentifierInfo.SetName(ExtractName(Object));
+        BasicIdentifierInfo.SetIsNativeDefined(IsNative(Object));
+        BasicIdentifierInfo.SetFullPath(Object->GetPathName());
+    }
 
     return BasicIdentifierInfo;
 }
@@ -66,6 +75,7 @@ FBasicIdentifierInfo ExtractBasicIdentifierInfo(T* Object)
 // property: Metadata: DeprecatedProperty -> CPF_Deprecated
 // meta: DeprecationMessage - works for class/function/property
 
+// nullptr safe
 template<typename T>
 FIdentifier ExtractIdentifier(const T* Object)
 {
@@ -78,16 +88,20 @@ FIdentifier ExtractIdentifier(const T* Object)
     static const FName TooltipMetadata(TEXT("Tooltip"));
     static const FName ShortTooltipMetadata(TEXT("ShortTooltip"));
 
-    FString Tooltip = Object->GetMetaData(TooltipMetadata);
-    FString ShortTooltip = Object->GetMetaData(ShortTooltipMetadata);
+    bool IsValidObject = !!Object;
+
+    FString Tooltip =
+        IsValidObject ? Object->GetMetaData(TooltipMetadata) : "";
+    FString ShortTooltip =
+        IsValidObject ? Object->GetMetaData(ShortTooltipMetadata) : "";
 
     Identifier.SetTooltip(MoveTemp(Tooltip));
     Identifier.SetShortTooltip(MoveTemp(ShortTooltip));
 
-    Identifier.SetCategory(
-        Object->GetMetaData(FBlueprintMetadata::MD_FunctionCategory));
-    Identifier.SetDeprecationMessage(
-        Object->GetMetaData(FBlueprintMetadata::MD_DeprecationMessage));
+    Identifier.SetCategory(IsValidObject ?
+        Object->GetMetaData(FBlueprintMetadata::MD_FunctionCategory) : "");
+    Identifier.SetDeprecationMessage(IsValidObject ?
+        Object->GetMetaData(FBlueprintMetadata::MD_DeprecationMessage) : "");
     Identifier.SetIsNativeDefined(BasicIdentifierInfo.IsNativeDefined());
     Identifier.SetFullPath(BasicIdentifierInfo.GetFullPath());
 
@@ -195,7 +209,7 @@ TUniquePtr<FType> FApiModelExtractor::FTypeExtractor::ExtractType(
     {
         Type = ExtractInterfaceType(Interface);
     }
-    // enum prop. declared as  enum
+    // enum prop. declared as enum
     else if (auto Enum = CastField<FEnumProperty>(Property))
     {
         Type = ExtractEnumType(Enum);
@@ -212,8 +226,11 @@ TUniquePtr<FType> FApiModelExtractor::FTypeExtractor::ExtractType(
         Type = ExtractPrimitiveType(Property);
     }
 
-    Type->SetIsReference(Property->HasAnyPropertyFlags(CPF_ReferenceParm));
-    Type->SetIsConst(Property->HasAnyPropertyFlags(CPF_ConstParm));
+    if (Property)
+    {
+        Type->SetIsReference(Property->HasAnyPropertyFlags(CPF_ReferenceParm));
+        Type->SetIsConst(Property->HasAnyPropertyFlags(CPF_ConstParm));
+    }
 
     return Type;
 }
@@ -320,13 +337,15 @@ TUniquePtr<FType> FApiModelExtractor::FTypeExtractor::ExtractObjectType(
         Reference = EObjectReference::Object;
     }
 
-    Type->SetClassType(FClass::DetermineClassType(ContainerClass));
+    bool IsValidClass = IsValid(ContainerClass);
+    Type->SetClassType(IsValidClass
+        ? FClass::DetermineClassType(ContainerClass) : EClassType::Class);
     Type->SetObjectReference(Reference);
 
     // the name that is taken, is of the contained class itself
     Info.SetName(ExtractName(ContainerClass));
-    Info.SetFullPath(ContainerClass->GetPathName());
-    Info.SetIsNativeDefined(IsNative(ContainerClass));
+    Info.SetFullPath(IsValidClass ? ContainerClass->GetPathName() : "");
+    Info.SetIsNativeDefined(IsValidClass ? IsNative(ContainerClass) : true);
     Type->SetIdentifierInfo(Info);
 
     return Type;
@@ -336,6 +355,8 @@ TUniquePtr<FType> FApiModelExtractor::FTypeExtractor::ExtractPrimitiveType(
     const FProperty* Property) const
 {
     TUniquePtr<FPrimitiveType> Type = MakeUnique<FPrimitiveType>();
+
+    if (!Property) return Type;
 
     // todo: no one likes these casts but what else could I do?
     // if you know how to improve this, contact me at
@@ -410,10 +431,13 @@ TUniquePtr<FType> FApiModelExtractor::FTypeExtractor::ExtractStructType(
 
     FBasicIdentifierInfo Info;
 
+    UScriptStruct* Struct = Property->Struct;
+    bool IsValidStruct = IsValid(Struct);
+
     // the name that is taken, is of the contained struct itself
-    Info.SetName(ExtractName(Property->Struct));
-    Info.SetFullPath(Property->Struct->GetPathName());
-    Info.SetIsNativeDefined(IsNative(Property->Struct));
+    Info.SetName(IsValidStruct ? ExtractName(Struct) : FIdentifierName{});
+    Info.SetFullPath(IsValidStruct ? Struct->GetPathName() : "");
+    Info.SetIsNativeDefined(IsValidStruct ? IsNative(Struct) : true);
     Type->SetIdentifierInfo(Info);
 
     return Type;
@@ -425,11 +449,13 @@ TUniquePtr<FType> FApiModelExtractor::FTypeExtractor::ExtractInterfaceType(
     TUniquePtr<FInterfaceType> Type = MakeUnique<FInterfaceType>();
 
     FBasicIdentifierInfo Info;
+    UClass* Class = Property->InterfaceClass;
+    bool IsValidClass = IsValid(Class);
 
     // the name that is taken, is of the contained interface itself
-    Info.SetName(ExtractName(Property->InterfaceClass));
-    Info.SetFullPath(Property->InterfaceClass->GetPathName());
-    Info.SetIsNativeDefined(IsNative(Property->InterfaceClass));
+    Info.SetName(IsValidClass ? ExtractName(Class) : FIdentifierName{});
+    Info.SetFullPath(IsValidClass ? Class->GetPathName() : "");
+    Info.SetIsNativeDefined(IsValidClass ? IsNative(Class) : true);
     Type->SetIdentifierInfo(Info);
 
     return Type;
@@ -444,13 +470,16 @@ TUniquePtr<FType> FApiModelExtractor::FTypeExtractor::ExtractEnumType(
     FBasicIdentifierInfo Info;
     FIdentifierName Name;
 
-    Name.SetName(Property->GetEnum()->GetName());
-    Name.SetDisplayName(FHelper::ExtractDisplayNameOfEnum(Property->GetEnum()));
+    UEnum* Enum = Property->GetEnum();
+    bool IsValidEnum = IsValid(Enum);
+
+    Name.SetName(IsValidEnum ? Enum->GetName() : "");
+    Name.SetDisplayName(FHelper::ExtractDisplayNameOfEnum(Enum));
 
     // the name that is taken, is of the contained enum itself
     Info.SetName(MoveTemp(Name));
-    Info.SetFullPath(Property->GetEnum()->GetPathName());
-    Info.SetIsNativeDefined(IsNative(Property->GetEnum()));
+    Info.SetFullPath(IsValidEnum ? Enum->GetPathName() : "");
+    Info.SetIsNativeDefined(IsNative(Enum));
     Type->SetIdentifierInfo(Info);
 
     return Type;
@@ -464,13 +493,16 @@ TUniquePtr<FType> FApiModelExtractor::FTypeExtractor::ExtractEnumTypeAsByte(
     FBasicIdentifierInfo Info;
     FIdentifierName Name;
 
-    Name.SetName(Property->Enum->GetName());
-    Name.SetDisplayName(FHelper::ExtractDisplayNameOfEnum(Property->Enum));
+    UEnum* Enum = Property->Enum;
+    bool IsValidEnum = IsValid(Enum);
+
+    Name.SetName(IsValidEnum ? Enum->GetName() : "");
+    Name.SetDisplayName(FHelper::ExtractDisplayNameOfEnum(Enum));
 
     // the name that is taken, is of the contained enum itself
     Info.SetName(MoveTemp(Name));
-    Info.SetFullPath(Property->Enum->GetPathName());
-    Info.SetIsNativeDefined(IsNative(Property->Enum));
+    Info.SetFullPath(IsValidEnum ? Enum->GetPathName() : "");
+    Info.SetIsNativeDefined(IsNative(Enum));
     Type->SetIdentifierInfo(Info);
 
     return Type;
@@ -557,11 +589,40 @@ const FString FApiModelExtractor::
     ClassBlueprintTypeMetadata("BlueprintType");
 const FString FApiModelExtractor::DefaultCategory("Default");
 
-FApiModelExtractor::FApiModelExtractor() { }
+FApiModelExtractor::FApiModelExtractor()
+{
+    // quick tests
+    ExtractName(static_cast<UClass*>(nullptr));
+    ensureAlways(IsNative(static_cast<UClass*>(nullptr)));
+    ExtractBasicIdentifierInfo(static_cast<UClass*>(nullptr));
+    ExtractIdentifier(static_cast<UClass*>(nullptr));
+    ensureAlways(ExtractType(nullptr));
+    ensureAlways(ExtractClass(nullptr));
+    ensureAlways(ExtractEnum(nullptr));
+    ensureAlways(ExtractStruct(nullptr));
+    ensureAlways(!IsEnumElementHidden(nullptr, {}));
+    ensureAlways(ExtractFunction(nullptr));
+    ensureAlways(!ExtractFunctions(nullptr).Num());
+    ensureAlways(!ExtractProperties(nullptr).Extracted.Num());
+    ensureAlways(ExtractProperty(nullptr));
+    ensureAlways(ExtractParameter(nullptr, nullptr));
+    ExtractDefaultValueAsStringFromProperty(nullptr, nullptr);
+    ExtractDefaultValueAsStringFromFunctionParameter(
+        nullptr, nullptr, FPrimitiveType{});
+    ExtractDefaultValueAsStringFromStructProperty(nullptr, nullptr);
+    ProcessDefaultValue("", nullptr);
+    FFunction Func;
+    ExtractGraphInformationAboutFunction(
+        Func, nullptr, nullptr);
+    ensureAlways(!ExtractMetadataFlag(nullptr, ""));
+    ensureAlways(!IsFunctionFromInterface(nullptr, nullptr));
+}
 
 TUniquePtr<FClass> FApiModelExtractor::ExtractClass(const UClass* Class) const
 {
     TUniquePtr<FClass> ExtractedClass = MakeUnique<FClass>();
+
+    if (!IsValid(Class)) return ExtractedClass;
 
     FIdentifier Identifier = ExtractIdentifier(Class);
     Identifier.SetIsDeprecated(Class->HasAnyClassFlags(CLASS_Deprecated));
@@ -623,6 +684,8 @@ TUniquePtr<FStruct> FApiModelExtractor::ExtractStruct(
 {
     TUniquePtr<FStruct> ExtractedStruct = MakeUnique<FStruct>();
 
+    if (!IsValid(Struct)) return ExtractedStruct;
+
     FPropertyExtractionResult Properties = ExtractProperties(Struct);
     for (int i = 0; i < Properties.Extracted.Num(); ++i)
     {
@@ -651,6 +714,8 @@ TUniquePtr<FStruct> FApiModelExtractor::ExtractStruct(
 TUniquePtr<FEnum> FApiModelExtractor::ExtractEnum(const UEnum* Enum) const
 {
     TUniquePtr<FEnum> ExtractedEnum = MakeUnique<FEnum>();
+
+    if (!IsValid(Enum)) return ExtractedEnum;
 
     // looks like meta=(ScriptName="") does nothing, meanwhile meta's
     // DisplayName works. GetAuthoredName from ExtractName returns wrong stuff
@@ -688,6 +753,8 @@ TUniquePtr<FEnum> FApiModelExtractor::ExtractEnum(const UEnum* Enum) const
 bool FApiModelExtractor::IsEnumElementHidden(const UEnum* Enum,
     const FString& ElementName) const
 {
+    if (!IsValid(Enum)) return false;
+
     return Enum->HasMetaData(*(ElementName + EnumMetadataSeparator +
         EnumHiddenMetadata));
 }
@@ -767,11 +834,13 @@ TArray<TUniquePtr<FFunction>> FApiModelExtractor::ExtractFunctions(
 {
     TArray<TUniquePtr<FFunction>> Result;
 
+    if (!IsValid(Struct)) return Result;
+
     for (TFieldIterator<UFunction> FunctionsIterator(Struct,
             EFieldIteratorFlags::SuperClassFlags::ExcludeSuper);
         FunctionsIterator; ++FunctionsIterator)
     {
-        if (!FunctionsIterator->
+        if (IsValid(*FunctionsIterator) && !FunctionsIterator->
             HasAnyFunctionFlags(FUNC_Delegate | FUNC_UbergraphFunction))
         {
             Result.Add(ExtractFunction(*FunctionsIterator));
@@ -787,15 +856,17 @@ FApiModelExtractor::FPropertyExtractionResult
 {
     FPropertyExtractionResult Result;
 
+    if (!IsValid(Struct)) return Result;
+
     for (TFieldIterator<FProperty> PropertiesIterator(Struct,
             EFieldIteratorFlags::SuperClassFlags::ExcludeSuper);
         PropertiesIterator; ++PropertiesIterator)
     {
-        if (!(*PropertiesIterator)->GetName()
+        if (*PropertiesIterator &&
+            !(*PropertiesIterator)->GetName()
             .Equals(UberGraphFrame, ESearchCase::IgnoreCase))
         {
-            Result.Extracted.Add(ExtractProperty(*PropertiesIterator,
-                Cast<UClass>(Struct)));
+            Result.Extracted.Add(ExtractProperty(*PropertiesIterator));
             Result.Original.Add(*PropertiesIterator);
         }
     }
@@ -807,6 +878,7 @@ TUniquePtr<FFunction> FApiModelExtractor::ExtractFunction(
     const UFunction* Function) const
 {
     TUniquePtr<FFunction> ExtractedFunction = MakeUnique<FFunction>();
+    if (!IsValid(Function)) return ExtractedFunction;
 
     FIdentifier Identifier = ExtractIdentifier(Function);
     Identifier.SetIsDeprecated(
@@ -822,7 +894,6 @@ TUniquePtr<FFunction> FApiModelExtractor::ExtractFunction(
     ExtractedFunction->SetCompactNodeTitle(
         Function->GetMetaData(FBlueprintMetadata::MD_CompactNodeTitle));
 
-    auto md = Function->GetPackage()->GetMetaData();
     TArray<FString> Keywords;
     FString KeywordsString =
         Function->GetMetaData(FBlueprintMetadata::MD_FunctionKeywords);
@@ -951,7 +1022,8 @@ TUniquePtr<FFunction> FApiModelExtractor::ExtractFunction(
         // BTW 2: c++ param like "...TArray<int>& x..." will not have
         // CPF_ReferenceParm (add UPARAM(ref) if you want it to have it), it'll
         // just have CPF_OutParm
-        if (PropertiesIterator->HasAnyPropertyFlags(CPF_Parm) &&
+        if (*PropertiesIterator &&
+            PropertiesIterator->HasAnyPropertyFlags(CPF_Parm) &&
             (!PropertiesIterator->HasAnyPropertyFlags(CPF_OutParm) ||
               PropertiesIterator->HasAnyPropertyFlags(CPF_ReferenceParm)))
         {
@@ -967,7 +1039,8 @@ TUniquePtr<FFunction> FApiModelExtractor::ExtractFunction(
     {
         // params that have CPF_OutParam and do not have CPF_ReferenceParm
         // will be on the right side of the node
-        if (PropertiesIterator->HasAllPropertyFlags(CPF_OutParm | CPF_Parm) &&
+        if (*PropertiesIterator &&
+            PropertiesIterator->HasAllPropertyFlags(CPF_OutParm | CPF_Parm) &&
             !PropertiesIterator->HasAnyPropertyFlags(CPF_ReferenceParm))
         {
             ExtractedFunction->AddReturnParameter(
@@ -986,9 +1059,11 @@ TUniquePtr<FFunction> FApiModelExtractor::ExtractFunction(
 }
 
 TUniquePtr<FUdProperty> FApiModelExtractor::ExtractProperty(
-    const FProperty* Property, const UClass* Class) const
+    const FProperty* Property) const
 {
     TUniquePtr<FUdProperty> ExtractedProperty = MakeUnique<FUdProperty>();
+
+    if (!Property) return ExtractedProperty;
 
     FIdentifier Identifier = ExtractIdentifier(Property);
     // todo (artsiom.drapun): by some reason the CPF_Deprecated is not set when
@@ -1054,7 +1129,8 @@ TUniquePtr<FUdProperty> FApiModelExtractor::ExtractProperty(
 
         if (ExtractedProperty->GetIdentifier().IsNativeDefined())
         {
-            if (ClassOwner->HasAnyClassFlags(CLASS_ReplicationDataIsSetUp))
+            if (IsValid(ClassOwner) &&
+                ClassOwner->HasAnyClassFlags(CLASS_ReplicationDataIsSetUp))
             {
                 TArray<FLifetimeProperty> LifetimeProperties;
                 ClassOwner->GetDefaultObject()->
@@ -1113,6 +1189,8 @@ TUniquePtr<FParameter> FApiModelExtractor::ExtractParameter(
 {
     TUniquePtr<FParameter> ExtractedParameter = MakeUnique<FParameter>();
 
+    if (!Parameter || !IsValid(Function)) return ExtractedParameter;
+
     ExtractedParameter->SetName(ExtractName(Parameter));
     ExtractedParameter->SetType(ExtractType(Parameter));
     ExtractedParameter->SetDefaultValueTransliteration(
@@ -1139,6 +1217,8 @@ FString FApiModelExtractor::ExtractDefaultValueAsStringFromFunctionParameter(
     const UFunction* Function,
     const FProperty* Parameter, const FType& Type) const
 {
+    if (!Parameter || !IsValid(Function)) return {};
+
     FString ValueAsString;
 
     UEdGraphSchema_K2::FindFunctionParameterDefaultValue(Function,
@@ -1189,6 +1269,8 @@ FString FApiModelExtractor::ExtractDefaultValueAsStringFromFunctionParameter(
 FString FApiModelExtractor::ExtractDefaultValueAsStringFromProperty(
     const UClass* Class, const FProperty* Property) const
 {
+    if (!Property || !IsValid(Class)) return {};
+
     FString ValueAsString;
     EPropertyPortFlags Flags = EPropertyPortFlags::PPF_None;
 
@@ -1200,8 +1282,11 @@ FString FApiModelExtractor::ExtractDefaultValueAsStringFromProperty(
 
     const uint8* PropertyAddr =
         Property->ContainerPtrToValuePtr<uint8>(Class->GetDefaultObject());
-    Property->ExportTextItem(ValueAsString, PropertyAddr,
-        nullptr, nullptr, Flags);
+    if (PropertyAddr)
+    {
+        Property->ExportTextItem(ValueAsString, PropertyAddr,
+            nullptr, nullptr, Flags);
+    }
 
     ValueAsString = ProcessDefaultValue(MoveTemp(ValueAsString), Property);
 
@@ -1211,6 +1296,8 @@ FString FApiModelExtractor::ExtractDefaultValueAsStringFromProperty(
 FString FApiModelExtractor::ExtractDefaultValueAsStringFromStructProperty(
     const UScriptStruct* Struct, const FProperty* Property) const
 {
+    if (!Property || !IsValid(Struct)) return {};
+
     FStructOnScope StructCopy{Struct};
 
     Struct->InitializeDefaultValue(StructCopy.GetStructMemory());
@@ -1226,8 +1313,11 @@ FString FApiModelExtractor::ExtractDefaultValueAsStringFromStructProperty(
     FString ValueAsString;
     const uint8* PropertyAddr =
         Property->ContainerPtrToValuePtr<uint8>(StructCopy.GetStructMemory());
-    Property->ExportTextItem(ValueAsString, PropertyAddr,
-        nullptr, nullptr, Flags);
+    if (PropertyAddr)
+    {
+        Property->ExportTextItem(ValueAsString, PropertyAddr,
+            nullptr, nullptr, Flags);
+    }
 
     ValueAsString = ProcessDefaultValue(MoveTemp(ValueAsString), Property);
 
@@ -1237,6 +1327,8 @@ FString FApiModelExtractor::ExtractDefaultValueAsStringFromStructProperty(
 FString FApiModelExtractor::ProcessDefaultValue(
     FString Value, const FProperty* Property) const
 {
+    if (!Property) return {};
+
     FString Result = MoveTemp(Value);
 
     if (Property->IsA<FBoolProperty>())
@@ -1252,6 +1344,8 @@ void FApiModelExtractor::ExtractGraphInformationAboutFunction(
     const UFunction* OriginalFunction,
     const UBlueprint* Blueprint) const
 {
+    if (!IsValid(OriginalFunction) || !IsValid(Blueprint)) return;
+
     TArray<UEdGraph*> Graphs;
     // all functions definitions are here
 #if ENGINE_MAJOR_VERSION >= 5
@@ -1274,8 +1368,12 @@ void FApiModelExtractor::ExtractGraphInformationAboutFunction(
     // whose FindSignatureFunction() returns a function equal to Function
     for (UEdGraph* Graph : Graphs)
     {
+        if (!IsValid(Graph)) continue;
+
         for (UEdGraphNode* Node : Graph->Nodes)
         {
+            if (!IsValid(Node)) continue;
+
             FName FunctionName;
             bool bIsEvent = false;
 
@@ -1316,6 +1414,8 @@ void FApiModelExtractor::ExtractGraphInformationAboutFunction(
 bool FApiModelExtractor::ExtractMetadataFlag(const UField* Object,
     const FString& Name, bool Default) const
 {
+    if (!IsValid(Object)) return false;
+
     if (!Object->HasMetaData(*Name))
     {
         return Default;
@@ -1328,6 +1428,8 @@ bool FApiModelExtractor::ExtractMetadataFlag(const UField* Object,
 bool FApiModelExtractor::IsFunctionFromInterface(const UFunction* Function,
     const UClass* Class) const
 {
+    if (!IsValid(Function) || !IsValid(Class)) return false;
+
     FString Name = ExtractName(Function).GetName();
 
     for (const auto& Interface : Class->Interfaces)

@@ -183,9 +183,9 @@ bool FDataExtractionOrchestrator::GameThread_StartProcessingOfNextObject()
 
         // todo(artsiom.drapun): add ability to add more supported types w/o
         // changes to the code below
-        if (Class || Blueprint)
+        if (IsValid(Class) || IsValid(Blueprint))
         {
-            if (Blueprint)
+            if (IsValid(Blueprint))
             {
                 // preload BlueprintGeneratedClass if the Obj is a BP
                 UE_LOG(LogUnrealisticDocs, Display,
@@ -206,8 +206,11 @@ bool FDataExtractionOrchestrator::GameThread_StartProcessingOfNextObject()
             ++TotalCountOfObjects;
             bIsRecognized = true;
 
-            Class->AddToRoot();
-            ProcessClass(Class);
+            if (IsValid(Class))
+            {
+                Class->AddToRoot();
+                ProcessClass(Class);
+            }
         }
         else if (UScriptStruct* Struct = Cast<UScriptStruct>(Obj))
         {
@@ -249,20 +252,28 @@ void FDataExtractionOrchestrator::ProcessClass(UClass* Class)
     Async(EAsyncExecution::LargeThreadPool,
         [this, Class]()
         {
-            TUniquePtr<FClass> ExtractedClass =
-                DataExtractor.Get()->ExtractClass(Class);
+            if (IsValid(Class))
+            {
+                TUniquePtr<FClass> ExtractedClass =
+                    DataExtractor.Get()->ExtractClass(Class);
 
-            // get/create module then add the object to the module
-            FModule* Module = SafeGetModule(Class->GetPathName());
-            Module->AddClass(MoveTemp(ExtractedClass));
-
-            // free the memory used by Class
-            AsyncTask(ENamedThreads::GameThread,
-                [Class]()
+                // get/create module then add the object to the module
+                FModule* Module = SafeGetModule(Class->GetPathName());
+                if (Module)
                 {
-                    Class->RemoveFromRoot();
-                });
+                    Module->AddClass(MoveTemp(ExtractedClass));
 
+                    // free the memory used by Class
+                    AsyncTask(ENamedThreads::GameThread,
+                        [Class]()
+                        {
+                            if (IsValid(Class))
+                            {
+                                Class->RemoveFromRoot();
+                            }
+                        });
+                }
+            }
             // notify the orchestrator that the object was processed
             FinishObject();
         });
@@ -273,20 +284,28 @@ void FDataExtractionOrchestrator::ProcessStruct(UScriptStruct* Struct)
     Async(EAsyncExecution::LargeThreadPool,
         [this, Struct]()
         {
-            TUniquePtr<FStruct> ExtractedStruct =
-                DataExtractor.Get()->ExtractStruct(Struct);
+            if (IsValid(Struct))
+            {
+                TUniquePtr<FStruct> ExtractedStruct =
+                    DataExtractor.Get()->ExtractStruct(Struct);
 
-            // get/create module then add the object to the module
-            FModule* Module = SafeGetModule(Struct->GetPathName());
-            Module->AddStruct(MoveTemp(ExtractedStruct));
-
-            // free the memory used by Struct
-            AsyncTask(ENamedThreads::GameThread,
-                [Struct]()
+                // get/create module then add the object to the module
+                FModule* Module = SafeGetModule(Struct->GetPathName());
+                if (Module)
                 {
-                    Struct->RemoveFromRoot();
-                });
+                    Module->AddStruct(MoveTemp(ExtractedStruct));
 
+                    // free the memory used by Struct
+                    AsyncTask(ENamedThreads::GameThread,
+                        [Struct]()
+                        {
+                            if (IsValid(Struct))
+                            {
+                                Struct->RemoveFromRoot();
+                            }
+                        });
+                }
+            }
             // notify the orchestrator that the object was processed
             FinishObject();
         });
@@ -297,20 +316,28 @@ void FDataExtractionOrchestrator::ProcessEnum(UEnum* Enum)
     Async(EAsyncExecution::LargeThreadPool,
         [this, Enum]()
         {
-            TUniquePtr<FEnum> ExtractedEnum =
-                DataExtractor.Get()->ExtractEnum(Enum);
+            if (IsValid(Enum))
+            {
+                TUniquePtr<FEnum> ExtractedEnum =
+                    DataExtractor.Get()->ExtractEnum(Enum);
 
-            // get/create module then add the object to the module
-            FModule* Module = SafeGetModule(Enum->GetPathName());
-            Module->AddEnum(MoveTemp(ExtractedEnum));
-
-            // free the memory used by Enum
-            AsyncTask(ENamedThreads::GameThread,
-                [Enum]()
+                // get/create module then add the object to the module
+                FModule* Module = SafeGetModule(Enum->GetPathName());
+                if (Module)
                 {
-                    Enum->RemoveFromRoot();
-                });
+                    Module->AddEnum(MoveTemp(ExtractedEnum));
 
+                    // free the memory used by Enum
+                    AsyncTask(ENamedThreads::GameThread,
+                        [Enum]()
+                        {
+                            if (IsValid(Enum))
+                            {
+                                Enum->RemoveFromRoot();
+                            }
+                        });
+                }
+            }
             // notify the orchestrator that the object was processed
             FinishObject();
         });

@@ -143,6 +143,8 @@ public:
     // todo(artsiom.drapun): is not tested
     static EClassType DetermineClassType(const UClass* Class)
     {
+        if (!IsValid(Class)) return EClassType::Class;
+
         if (Class->IsChildOf<UActorComponent>())
         {
             return EClassType::Component;

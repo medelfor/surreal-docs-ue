@@ -95,7 +95,7 @@ private:
     // expects that SetUpRuntimeReplicationData() was called on Class if it's
     // a native class
     TUniquePtr<FUdProperty> ExtractProperty(
-        const FProperty* Property, const UClass* Class) const;
+        const FProperty* Property) const;
 
     bool IsEnumElementHidden(const UEnum* Enum,
         const FString& ElementName) const;

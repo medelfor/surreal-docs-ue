@@ -6,6 +6,8 @@ const FString FHelper::EnumDisplayNameMetadata("DisplayName");
 
 FString FHelper::ExtractDisplayNameOfEnum(const UEnum* Enum)
 {
+    if (!IsValid(Enum)) return "";
+
     if (Enum->HasMetaData(*EnumDisplayNameMetadata))
     {
         return Enum->GetMetaData(*EnumDisplayNameMetadata);
