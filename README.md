@@ -21,12 +21,12 @@ Surreal Docs is the first all-encompassing docs generation system for Unreal Eng
 
 Unreal Engine support is as follows:
 
-| Unreal Engine version | Support [1]    |
-|-----------------------|----------------|
-| 4.27                  | Yes            |
-| 5.0                   | Yes            |
-| 5.1                   | Yes            |
-| 5.2                   | On the way [2] |
+| Unreal Engine version | Support [1] |
+|-----------------------|-------------|
+| 4.27                  | Yes         |
+| 5.0                   | Yes         |
+| 5.1                   | Yes         |
+| 5.2                   | Yes         |
 
 You can find more info about OS and Unreal Engine compatibility on the ["Supported operating systems and Unreal Engine versions"](https://docs.medelfor.com/medelfor/surreal-docs/latest/en-US/docs/os-and-ue-support "Supported operating systems and Unreal Engine versions") page.
 

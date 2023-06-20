@@ -55,6 +55,8 @@ void FContentPathEnumerator::Prepass(FName const& Path)
         UAnimBlueprint::StaticClass()->GetFName());
 #endif
 
+    // fixes @SD-1186. Need to write tests for it (it's not that easy)
+    AssetRegistry.SearchAllAssets(true);
     AssetRegistry.GetAssetsByPath(Path, AssetList, true);
     AssetRegistry.RunAssetsThroughFilter(AssetList, Filter);
 }
