@@ -7,7 +7,6 @@
 <a href="https://medelfor.com">Medelfor</a> |
 <a href="https://store.medelfor.com">Store</a> |
 <a href="https://issues.internal.medelfor.com/youtrack/issues?q=project:%20%7BSurreal%20Docs%7D">Known Issues</a> |
-<a href="https://www.linkedin.com/company/medelfor/">LinkedIn</a> |
 <a href="https://twitter.com/medelfor">Twitter</a>
 </h4>
 
@@ -74,14 +73,14 @@ any use case and in every price range!
 [Surreal Cloud](https://medelfor.com/#surreal-cloud "Surreal Cloud") - a
 serverless and auto-scaling cloud hosting for public documentation. Surreal
 Cloud is the easiest way to make your documentation available to everyone on
-the internet. Starts at $17/month (excl. VAT/GST).
+the internet. Starts at $7.99/month (excl. VAT/GST).
 
 <img src="readme/SurrealDocsCloudPlus50.png" align="left"/>
 
 [Surreal Cloud+](https://medelfor.com/#surreal-cloud-plus "Surreal Cloud+") -
 a Medelfor's cloud for public and private documentation. Surreal
 Cloud+ is the best way to share your documentation privately with your team.
-Starts at $25/month (excl. VAT/GST).
+Starts at $14.99/month (excl. VAT/GST).
 
 <img src="readme/SurrealDocsCloudPro50.png" align="left"/>
 
@@ -89,7 +88,7 @@ Starts at $25/month (excl. VAT/GST).
 the pinnacle of Surreal Cloud technology. Includes an on-premises variant
 of Surreal Cloud and the online cloud for private and public documentation.
 Surreal Cloud Pro is the perfect choice for companies who want to share their
-documentation within the organization. Starts at $70/month (excl. VAT/GST).
+documentation within the organization. Starts at $39.99/month (excl. VAT/GST).
 
 Any Surreal Cloud solution integrates 100% seamlessly with Surreal Docs.
 

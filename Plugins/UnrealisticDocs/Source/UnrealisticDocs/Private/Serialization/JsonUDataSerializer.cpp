@@ -321,6 +321,8 @@ const FString FJsonUDataSerializer::ModuleStructsField("structs");
 const FString FJsonUDataSerializer::ModuleEnumsField("enums");
 
 const FString FJsonUDataSerializer::ClassTypeClass("class");
+const FString FJsonUDataSerializer::ClassTypeSubsystem("subsystem");
+const FString FJsonUDataSerializer::ClassTypeDevSettings("devsettings");
 const FString FJsonUDataSerializer::ClassTypeComponent("component");
 const FString FJsonUDataSerializer::ClassTypeWidget("widget");
 const FString FJsonUDataSerializer::
@@ -1182,6 +1184,9 @@ FString FJsonUDataSerializer::SerializeClassType(EClassType ClassType)
     TMap<EClassType, FString> ClassTypes;
 
     ClassTypes.Add(EClassType::Class, ClassTypeClass);
+    ClassTypes.Add(EClassType::Subsystem, ClassTypeSubsystem);
+    ClassTypes.Add(EClassType::DeveloperSettings,
+        ClassTypeDevSettings);
     ClassTypes.Add(EClassType::Component, ClassTypeComponent);
     ClassTypes.Add(EClassType::Widget, ClassTypeWidget);
     ClassTypes.Add(EClassType::FunctionLibrary,

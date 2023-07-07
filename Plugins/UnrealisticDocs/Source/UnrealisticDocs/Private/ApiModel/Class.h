@@ -12,7 +12,9 @@ enum class EClassType
     Widget,
     FunctionLibrary,
     Component,
-    Actor
+    Actor,
+    Subsystem,
+    DeveloperSettings
 };
 
 class FClass
@@ -156,6 +158,14 @@ public:
         if (Class->IsChildOf<UBlueprintFunctionLibrary>())
         {
             return EClassType::FunctionLibrary;
+        }
+        if (Class->IsChildOf<UDeveloperSettings>())
+        {
+            return EClassType::DeveloperSettings;
+        }
+        if (Class->IsChildOf<USubsystem>())
+        {
+            return EClassType::Subsystem;
         }
         if (Class->IsChildOf<AActor>())
         {

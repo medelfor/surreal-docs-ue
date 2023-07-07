@@ -41,6 +41,8 @@ private:
     static const FString ModuleEnumsField;
 
     static const FString ClassTypeClass;
+    static const FString ClassTypeSubsystem;
+    static const FString ClassTypeDevSettings;
     static const FString ClassTypeComponent;
     static const FString ClassTypeWidget;
     static const FString ClassTypeFunctionLibrary;

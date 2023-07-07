@@ -33,6 +33,7 @@ public class UnrealisticDocs : ModuleRules
 				"MainFrame",
 				"Json",
 				"JsonUtilities",
+				"DeveloperSettings",
 				"UMG"
 			}
 		);

@@ -4,13 +4,13 @@
 	"Description" : "Plugin accompanying Unrealistic Docs™ CLI",
 	"Version" : 1,
 	"VersionName" : "1.0",
-	"CreatedBy" : "Medelför OÜ",
+	"CreatedBy" : "Medelfor, Limited",
 	"CreatedByURL" : "https://medelfor.com",
 	"MarketplaceURL" : "",
 	"SupportURL" : "support@medelfor.com",
 	"Category" : "Documentation",
 	"CanContainContent" : false,
-	"EnabledByDefault" : false,
+	"EnabledByDefault" : true,
 	"Modules" :
 	[
 		{
